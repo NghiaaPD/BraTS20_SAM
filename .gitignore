@@ -12,3 +12,15 @@ wheels/
 zip_data/
 BraTS20/MICCAI_BraTS2020_TrainingData
 BraTS20/MICCAI_BraTS2020_ValidationData
+BraTS2018/testing/
+BraTS2018/training/
+BRATS2015/testing/
+BRATS2015/training/
+
+# Unignore docs folders and .ipynb files
+!BraTS20/docs/
+!BraTS20/explore_data.ipynb
+!BraTS2018/explore_data.ipynb
+!BRATS2015/explore_dataset.ipynb
+
+.torrent
