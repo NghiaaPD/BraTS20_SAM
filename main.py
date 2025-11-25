@@ -182,17 +182,29 @@ with tab2:
     tumor_mask = (seg_data == 1) | (seg_data == 2) | (seg_data == 4)
     tumor_coords = np.column_stack(np.where(tumor_mask))
     
+    # Separate coordinates for each label
+    ncr_coords = np.column_stack(np.where(seg_data == 1))
+    edema_coords = np.column_stack(np.where(seg_data == 2))
+    et_coords = np.column_stack(np.where(seg_data == 4))
+    
     if tumor_coords.shape[0] == 0:
         st.error("No tumor found in segmentation data!")
         st.stop()
     
     st.write(f"Number of tumor voxels: {tumor_coords.shape[0]}")
     
-    # Downsample for visualization
+    # Downsample for visualization (divide max_points among labels)
     max_points = 50000
-    if tumor_coords.shape[0] > max_points:
-        idx = np.random.choice(tumor_coords.shape[0], max_points, replace=False)
-        tumor_coords = tumor_coords[idx]
+    max_points_per_label = max_points // 3
+    if ncr_coords.shape[0] > max_points_per_label:
+        idx = np.random.choice(ncr_coords.shape[0], max_points_per_label, replace=False)
+        ncr_coords = ncr_coords[idx]
+    if edema_coords.shape[0] > max_points_per_label:
+        idx = np.random.choice(edema_coords.shape[0], max_points_per_label, replace=False)
+        edema_coords = edema_coords[idx]
+    if et_coords.shape[0] > max_points_per_label:
+        idx = np.random.choice(et_coords.shape[0], max_points_per_label, replace=False)
+        et_coords = et_coords[idx]
     
     # Calculate tumor dimensions
     x_indices_t = np.where(np.any(tumor_mask, axis=(1, 2)))[0]
@@ -236,18 +248,40 @@ with tab2:
             (0,4), (1,5), (2,6), (3,7)
         ]
         
-        fig_tumor = go.Figure(data=[go.Scatter3d(
-            x=tumor_coords[:, 0],
-            y=tumor_coords[:, 1],
-            z=tumor_coords[:, 2],
-            mode='markers',
-            marker=dict(
-                size=2,
-                color='red',
-                opacity=0.8
-            ),
-            name='Tumor'
-        )])
+        fig_tumor = go.Figure()
+        
+        # Add NCR/NET (label 1) - red
+        if ncr_coords.shape[0] > 0:
+            fig_tumor.add_trace(go.Scatter3d(
+                x=ncr_coords[:, 0],
+                y=ncr_coords[:, 1],
+                z=ncr_coords[:, 2],
+                mode='markers',
+                marker=dict(size=2, color='red', opacity=0.8),
+                name='NCR/NET'
+            ))
+        
+        # Add Edema (label 2) - yellow
+        if edema_coords.shape[0] > 0:
+            fig_tumor.add_trace(go.Scatter3d(
+                x=edema_coords[:, 0],
+                y=edema_coords[:, 1],
+                z=edema_coords[:, 2],
+                mode='markers',
+                marker=dict(size=2, color='yellow', opacity=0.8),
+                name='Edema'
+            ))
+        
+        # Add ET (label 4) - blue
+        if et_coords.shape[0] > 0:
+            fig_tumor.add_trace(go.Scatter3d(
+                x=et_coords[:, 0],
+                y=et_coords[:, 1],
+                z=et_coords[:, 2],
+                mode='markers',
+                marker=dict(size=2, color='blue', opacity=0.8),
+                name='ET'
+            ))
         
         # Add tumor bounding box
         for edge in tumor_edges:
